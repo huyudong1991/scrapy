@@ -1,0 +1,33 @@
+# -*- coding: utf-8 -*-
+import scrapy
+from ..items import ImageItem
+class BookSpider(scrapy.Spider):
+	# 每一个爬虫的唯一标识
+	name="mm"
+
+	# 定义爬虫的起始点，起始点可以是多个，这里只有一个
+	start_urls=['http://www.mm131.com/qingchun/']
+	item=ImageItem()
+	item['image_urls']=[]
+	def parse(self,response):
+		link=response.css('div.main dl.list-left dd a::attr(href)').extract_first()
+		'''
+		yield{
+			"link":link,
+		}
+		'''
+		yield scrapy.Request(link,callback=self.getpic)
+
+	def getpic(self,response):
+		link=response.css('div.content-pic a img::attr(src)').extract_first()
+
+
+		self.item['image_urls'].append(link)
+		yield self.item
+		
+		next_url=response.css('div.content-page a.page-ch::attr(href)').extract()[-1]
+		if next_url:
+			next_url=response.urljoin(next_url)
+			yield scrapy.Request(next_url,callback=self.getpic)
+		
+		
